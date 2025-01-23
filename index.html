@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verificador de Bilhetes da Mega-Sena</title>
+    <style>
+        #canvas, #snap, #check {
+            display: block;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Verifique seu Bilhete da Mega-Sena</h1>
+    <video id="video" width="320" height="240" autoplay></video>
+    <button id="snap">Tirar Foto</button>
+    <canvas id="canvas" width="320" height="240" style="display: none;"></canvas>
+    <button id="check" style="display: none;">Conferir Números</button>
+    <div id="result"></div>
+    <script>
+        var video = document.getElementById('video');
+        var canvas = document.getElementById('canvas');
+        var context = canvas.getContext('2d');
+        var snapButton = document.getElementById('snap');
+        var checkButton = document.getElementById('check');
+
+        // Solicitação de acesso à câmera
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(function(stream) {
+                video.srcObject = stream;
+                video.play();
+            })
+            .catch(function(err) {
+                console.log("Ocorreu o seguinte erro: " + err);
+            });
+
+        // Captura a foto quando clica no botão 'Tirar Foto'
+        snapButton.addEventListener('click', function() {
+            context.drawImage(video, 0, 0, 320, 240);
+            canvas.style.display = 'block';  // Mostra o canvas com a imagem capturada
+            checkButton.style.display = 'inline-block';  // Mostra o botão 'Conferir'
+        });
+
+        // Enviar a imagem capturada para o servidor quando clica no botão 'Conferir'
+        checkButton.addEventListener('click', function() {
+            var dataURL = canvas.toDataURL('image/png');
+            fetch('process_image.php', {
+                method: 'POST',
+                body: JSON.stringify({ image: dataURL }),
+                headers: { 'Content-Type': 'application/json' }
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log(data);
+                document.getElementById('result').innerText = "Texto detectado: " + data.text;
+                // Aqui você deve chamar a lógica para comparar os números reconhecidos com os resultados coonsultados
+            })
+            .catch(error => console.error('Erro:', error));
+        });
+
+    </script>
+</body>
+</html>
